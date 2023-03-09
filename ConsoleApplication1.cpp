@@ -66,8 +66,32 @@ static std::unique_ptr<ITEMIDLIST, std::function<void(LPITEMIDLIST)>> MakePidl(L
     return { pidl, deleter };
 }
 
+/*
+#define tv(mem) wprintf(L#mem L" %d\n", offsetof(TVITEMEXW, mem))
+
+int foo() {
+    tv(mask);
+    tv(hItem);
+    tv(state);
+    tv(stateMask);
+    tv(pszText);
+    tv(cchTextMax);
+    tv(iImage);
+    tv(iSelectedImage);
+    tv(cChildren);
+    tv(lParam);
+    tv(iIntegral);
+    tv(uStateEx);
+    tv(hwnd);
+    tv(iExpandedImage);
+    tv(iReserved);
+    return 0;
+}
+*/
+
 int wmain()
 {
+    //foo();
     HRESULT hr;
 
     hr = CoInitialize(nullptr);
@@ -128,6 +152,8 @@ int wmain()
                                 std::wcout << L"found tree " << hnp << "\n";
                                 HTREEITEM root = TreeView_GetRoot(hnp);
                                 for (HTREEITEM itm = TreeView_GetChild(hnp, root); itm; itm = TreeView_GetNextSibling(hnp, itm)) {
+                                    /*
+                                    break;
                                     std::vector<wchar_t> text(MAX_PATH);
                                     TVITEMW itmdata{};
                                     itmdata.hItem = itm;
@@ -136,6 +162,7 @@ int wmain()
                                     itmdata.cchTextMax = text.size() - 1;
                                     TreeView_GetItem(hnp, &itmdata);
                                     TreeView_GetItemPartRect
+                                    */
                                 }
                             }
                         }

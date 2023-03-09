@@ -4,18 +4,27 @@
 
 #o:: {
     try {
-        htv := ControlGetHwnd("Navigation Pane", "ahk_class CabinetWClass")
+        hw := WinActive("ahk_class CabinetWClass")
+        if !hw
+            return
+        htv := ControlGetHwnd("SysTreeView321", "ahk_id " hw)
         tv := RemoteTreeView(htv)
         i := 0
-        s := ""
         loop {
             i := tv.GetNext(i, "F")
             if not i
                 break
+            /*
             r := tv.GetItemRect(i)
-            s := s . " / " . tv.GetText(i) . " " . r[1] . " " . r[2] . " " . r[3] . " " . r[4]
+            t := tv.GetText(i)
+            if t = "Downloads" && r[1] >= 0 && r[2] >= 0 {
+                SetControlDelay -1
+                ControlClick htv, , , "LEFT", , "NA X" (r[1] + 6) " Y" (r[2] + 6)
+                return
+            }
+            */
+            tv.SetSelectionByText("Downloads")
         }
-        MsgBox s
     } catch TargetError {
     }
 }

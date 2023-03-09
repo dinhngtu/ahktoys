@@ -649,7 +649,34 @@ class RemoteTreeView {
         proc := ProcessHandle(ProcessId)
 
         _rect := RemoteBuffer(proc.hProcess, 16)
+        rect := Buffer(16)
+        NumPut(proc.is32Bit ? "UInt" : "UInt64", pItem, rect)
+        _rect.put(rect)
         if SendMessage(this.TVM_GETITEMRECT, code, _rect.mem, , "ahk_id " this.TVHwnd) {
+            _rect.get(rect)
+            left := NumGet(rect, 0, "Int"), top := NumGet(rect, 4, "Int"), right := NumGet(rect, 8, "Int"), bottom := NumGet(rect, 12, "Int")
+            return [left, top, right, bottom]
+        } else {
+            return [-1, -1, -1, -1]
+        }
+    }
+
+    GetItemPartRect(pItem) {
+        ProcessId := WinGetPID("ahk_id " this.TVHwnd)
+        proc := ProcessHandle(ProcessId)
+        Size := proc.is32Bit ? 12 : 20
+
+        _info := RemoteBuffer(proc.hProcess, Size)
+        _rect := RemoteBuffer(proc.hProcess, 16)
+
+        info := Buffer(Size, 0)
+        if proc.is32Bit {
+            NumPut("UInt", pItem, "UInt", _rect.mem, "Int", 1, info)
+        } else {
+            NumPut("UInt64", pItem, "UInt64", _rect.mem, "Int", 1, info)
+        }
+        _info.put(info)
+        if SendMessage(this.TVM_GETITEMPARTRECT, 0, _info.mem, , "ahk_id " this.TVHwnd) {
             rect := Buffer(16)
             _rect.get(rect)
             left := NumGet(rect, 0, "Int"), top := NumGet(rect, 4, "Int"), right := NumGet(rect, 8, "Int"), bottom := NumGet(rect, 12, "Int")
