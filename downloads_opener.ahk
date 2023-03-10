@@ -64,3 +64,31 @@ MButtonAction(ThisHotkey) {
         Send "{MButton}"
     }
 }
+
+ExplorerAction(ThisHotkey) {
+    try {
+        id := WinGetID("ahk_class CabinetWClass")
+        title := WinGetTitle("ahk_id " id)
+        if title !== "Downloads" {
+            ; relative to window: y=480
+            ControlClick "SysTreeView321", "ahk_id " id, , "MIDDLE", , "NA X60 Y263"
+        }
+        WinActivate "ahk_id " id
+    } catch TargetError {
+        Run "shell:downloads"
+    }
+}
+
+ExplorerActionAlt(ThisHotkey) {
+    if WinExist("Downloads ahk_class CabinetWClass") {
+        WinActivate
+        Return
+    }
+    hw := WinExist("ahk_class CabinetWClass", , "Downloads")
+    if !hw {
+        Run "shell:downloads"
+        return
+    }
+    ControlClick "SysTreeView321", , , "MIDDLE", , "NA X60 Y263"
+    WinActivate
+}
