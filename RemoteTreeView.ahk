@@ -620,7 +620,7 @@ class RemoteTreeView {
         Size := proc.is32Bit ? 60 : 80 ; Size of a TVITEMEX structure
 
         _tvi := RemoteBuffer(proc.hProcess, Size)
-        _txt := RemoteBuffer(proc.hProcess, 256)
+        _txt := RemoteBuffer(proc.hProcess, 260 * 2 + 2)
 
         ; TVITEMEX Structure
         tvi := Buffer(Size, 0) ; V1toV2: if 'tvi' is a UTF-16 string, use 'VarSetStrCapacity(&tvi, Size)'
