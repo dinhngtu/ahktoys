@@ -62,7 +62,7 @@ static void ShowIDispatch(IDispatch* obj) {
 }
 
 static std::unique_ptr<ITEMIDLIST, std::function<void(LPITEMIDLIST)>> MakePidl(LPITEMIDLIST pidl) {
-    auto deleter = [](LPITEMIDLIST p) { ILFree(p); };
+    auto deleter = [](LPITEMIDLIST p) { CoTaskMemFree(p); };
     return { pidl, deleter };
 }
 
@@ -137,62 +137,61 @@ int wmain()
         std::wcout << L"location: " << std::wstring(locUrl) << L"\n";
 
         CComQIPtr<IServiceProvider> ssp(w);
-        if (ssp) {
-            CComPtr<IShellBrowser> sb;
-            hr = ssp->QueryService(_uuidof(IShellBrowser), &sb);
-            if (SUCCEEDED(hr) && sb) {
-                std::array<UINT, 5> fcws = { FCW_STATUS, FCW_TOOLBAR, FCW_TREE, FCW_INTERNETBAR, FCW_PROGRESS };
-                for (auto fcw : fcws) {
-                    HWND chwnd;
-                    if (SUCCEEDED(sb->GetControlWindow(fcw, &chwnd)) && chwnd) {
-                        std::wcout << L"fcw " << fcw << L" hwnd " << chwnd << L"\n";
-                        if (fcw == FCW_TREE) {
-                            auto hnp = FindWindowExW(chwnd, nullptr, L"SysTreeView32", nullptr);
-                            if (hnp) {
-                                std::wcout << L"found tree " << hnp << "\n";
-                                HTREEITEM root = TreeView_GetRoot(hnp);
-                                for (HTREEITEM itm = TreeView_GetChild(hnp, root); itm; itm = TreeView_GetNextSibling(hnp, itm)) {
-                                    /*
-                                    break;
-                                    std::vector<wchar_t> text(MAX_PATH);
-                                    TVITEMW itmdata{};
-                                    itmdata.hItem = itm;
-                                    itmdata.mask = TVIF_TEXT | TVIF_PARAM;
-                                    itmdata.pszText = text.data();
-                                    itmdata.cchTextMax = text.size() - 1;
-                                    TreeView_GetItem(hnp, &itmdata);
-                                    TreeView_GetItemPartRect
-                                    */
-                                }
-                            }
-                        }
-                    }
-                }
-
-                CComPtr<IShellView> sv;
-                hr = sb->QueryActiveShellView(&sv);
-                if (SUCCEEDED(hr) && sv) {
-                }
-
-                if (!locUrl.Length()) {
-                    /*
-                    CComBSTR target(L"file://E:/");
-                    CComVariant flag = navOpenInNewTab;
-                    CComVariant tfn = L"_self";
-                    hr = w->Navigate(target, &flag, &tfn, nullptr, nullptr);
-                    ATLENSURE_SUCCEEDED(hr);
-                    */
-                    PIDLIST_ABSOLUTE _pidl;
-                    hr = SHGetKnownFolderIDList(FOLDERID_Documents, KF_FLAG_DEFAULT, GetCurrentProcessToken(), &_pidl);
-                    ATLENSURE_SUCCEEDED(hr);
-                    auto pidl = MakePidl(_pidl);
-                    hr = sb->BrowseObject(pidl.get(), SBSP_SAMEBROWSER | SBSP_ABSOLUTE);
-                    ATLENSURE_SUCCEEDED(hr);
-                }
+        if (!ssp)
+            continue;
+        CComPtr<IShellBrowser> sb;
+        hr = ssp->QueryService(_uuidof(IShellBrowser), &sb);
+        if (FAILED(hr) || !sb) {
+            std::wcout << L"no sb found\n";
+            continue;
+        }
+        std::array<UINT, 5> fcws = { FCW_STATUS, FCW_TOOLBAR, FCW_TREE, FCW_INTERNETBAR, FCW_PROGRESS };
+        for (auto fcw : fcws) {
+            HWND chwnd;
+            if (FAILED(sb->GetControlWindow(fcw, &chwnd)) || !chwnd)
+                continue;
+            std::wcout << L"fcw " << fcw << L" hwnd " << chwnd << L"\n";
+            if (fcw != FCW_TREE)
+                continue;
+            auto hnp = FindWindowExW(chwnd, nullptr, L"SysTreeView32", nullptr);
+            if (!hnp)
+                continue;
+            std::wcout << L"found tree " << hnp << "\n";
+            HTREEITEM root = TreeView_GetRoot(hnp);
+            for (HTREEITEM itm = TreeView_GetChild(hnp, root); itm; itm = TreeView_GetNextSibling(hnp, itm)) {
+                /*
+                break;
+                std::vector<wchar_t> text(MAX_PATH);
+                TVITEMW itmdata{};
+                itmdata.hItem = itm;
+                itmdata.mask = TVIF_TEXT | TVIF_PARAM;
+                itmdata.pszText = text.data();
+                itmdata.cchTextMax = text.size() - 1;
+                TreeView_GetItem(hnp, &itmdata);
+                TreeView_GetItemPartRect
+                */
             }
-            else {
-                std::wcout << L"no sb found\n";
-            }
+        }
+
+        CComPtr<IShellView> sv;
+        hr = sb->QueryActiveShellView(&sv);
+        if (SUCCEEDED(hr) && sv) {
+        }
+
+        if (!locUrl.Length()) {
+            /*
+            CComBSTR target(L"file://E:/");
+            CComVariant flag = navOpenInNewTab;
+            CComVariant tfn = L"_self";
+            hr = w->Navigate(target, &flag, &tfn, nullptr, nullptr);
+            ATLENSURE_SUCCEEDED(hr);
+            */
+            PIDLIST_ABSOLUTE _pidl;
+            hr = SHGetKnownFolderIDList(FOLDERID_Documents, KF_FLAG_DEFAULT, GetCurrentProcessToken(), &_pidl);
+            ATLENSURE_SUCCEEDED(hr);
+            auto pidl = MakePidl(_pidl);
+            hr = sb->BrowseObject(pidl.get(), SBSP_SAMEBROWSER | SBSP_ABSOLUTE);
+            ATLENSURE_SUCCEEDED(hr);
         }
         std::wcout << L"\n";
     }
